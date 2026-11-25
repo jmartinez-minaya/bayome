@@ -22,11 +22,11 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
+          extra-repositories: https://inla.r-inla-download.org/R/stable
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::covr, any::xml2
-          extra-repositories: https://inla.r-inla-download.org/R/stable
           needs: coverage
 
       - name: Test coverage
