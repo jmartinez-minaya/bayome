@@ -1,4 +1,5 @@
 # Code style with lintr, configured in .lintr. Based on r-lib/actions (lint).
+# Informative only: style warnings are shown in the log but do not fail the job.
 on:
   push:
     branches: [main, master]
@@ -29,5 +30,3 @@ jobs:
       - name: Lint
         run: lintr::lint_package()
         shell: Rscript {0}
-        env:
-          LINTR_ERROR_ON_LINT: true

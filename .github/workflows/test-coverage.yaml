@@ -1,6 +1,7 @@
 # Test coverage with covr, uploaded to Codecov. Based on r-lib/actions
 # (test-coverage). For a private repository, add the Codecov upload token
-# as the repository secret CODECOV_TOKEN.
+# as the repository secret CODECOV_TOKEN. Until then the upload fails without
+# failing the job (fail_ci_if_error: false).
 on:
   push:
     branches: [main, master]
@@ -42,7 +43,7 @@ jobs:
 
       - uses: codecov/codecov-action@v5
         with:
-          fail_ci_if_error: ${{ github.event_name != 'pull_request' && true || false }}
+          fail_ci_if_error: false
           files: ./cobertura.xml
           plugins: noop
           disable_search: true

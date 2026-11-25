@@ -91,7 +91,8 @@
                      s, s, J),
              sprintf(paste("f(dPc_%s, wdPc_%s, copy = \"dP_%s\", fixed = FALSE,",
                            "hyper = .bm_hyper$beta)"), s, s, s),
-             sprintf("f(eA_%s, weA_%s, model = \"iid\", n = %d, hyper = .bm_hyper$between)", s, s, J))
+             sprintf("f(eA_%s, weA_%s, model = \"iid\", n = %d, hyper = .bm_hyper$between)",
+                     s, s, J))
   }
 
   # Formula random effects and strata: one term per part, replicated per
