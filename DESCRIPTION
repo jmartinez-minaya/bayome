@@ -27,7 +27,6 @@ Imports:
     utils
 Suggests:
     INLA,
-    maaslin3,
     sn,
     testthat (>= 3.0.0)
 Additional_repositories: https://inla.r-inla-download.org/R/stable
