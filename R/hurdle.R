@@ -49,7 +49,9 @@
       is_int <- colnames(X)[k] == "(Intercept)"
       prec[[nm[k]]] <- if (is_int) {
         if (parts[b] == "prevalence") 0.01 else 1e-4
-      } else prior$fixed[[parts[b]]]
+      } else {
+        prior$fixed[[parts[b]]]
+      }
     }
   }
 
@@ -332,7 +334,8 @@ bm_qvalue <- function(lfsr) {
     })
   adjust <- function(p) {
     if (selection == "bh_lfsr") {
-      q <- rep(NA_real_, length(p)); ok <- !is.na(p)
+      q <- rep(NA_real_, length(p))
+      ok <- !is.na(p)
       q[ok] <- stats::p.adjust(p[ok], "BH")
       q
     } else {

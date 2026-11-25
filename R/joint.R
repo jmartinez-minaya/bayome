@@ -51,9 +51,12 @@
   obs <- which(!is.na(Y), arr.ind = TRUE)
   obs <- obs[ok_abun[obs[, 2]], , drop = FALSE]
   abun <- data.frame(i = obs[, 1], j = obs[, 2], y = Y[obs])
-  NP <- nrow(prev); NA_ <- nrow(abun); N <- NP + NA_
+  NP <- nrow(prev)
+  NA_ <- nrow(abun)
+  N <- NP + NA_
   rows <- rbind(prev, abun)
-  isA <- c(rep(0, NP), rep(1, NA_)); isP <- 1 - isA
+  isA <- c(rep(0, NP), rep(1, NA_))
+  isP <- 1 - isA
   resp <- matrix(NA_real_, N, 2)
   resp[seq_len(NP), 1] <- prev$y
   resp[NP + seq_len(NA_), 2] <- abun$y
@@ -84,8 +87,10 @@
     prec[[paste0("muP_", s)]] <- prior$fixed$prevalence
     prec[[paste0("muA_", s)]] <- prior$fixed$abundance
     rhs <- c(rhs, paste0("muP_", s), paste0("muA_", s),
-             sprintf("f(dP_%s, wdP_%s, model = \"iid\", n = %d, hyper = .bm_hyper$prev)", s, s, J),
-             sprintf("f(dPc_%s, wdPc_%s, copy = \"dP_%s\", fixed = FALSE, hyper = .bm_hyper$beta)", s, s, s),
+             sprintf("f(dP_%s, wdP_%s, model = \"iid\", n = %d, hyper = .bm_hyper$prev)",
+                     s, s, J),
+             sprintf(paste("f(dPc_%s, wdPc_%s, copy = \"dP_%s\", fixed = FALSE,",
+                           "hyper = .bm_hyper$beta)"), s, s, s),
              sprintf("f(eA_%s, weA_%s, model = \"iid\", n = %d, hyper = .bm_hyper$between)", s, s, J))
   }
 
@@ -158,10 +163,12 @@
   lat <- vapply(smp, function(z) z$latent[, 1], numeric(length(nm)))
   pick <- function(name, idx) lat[match(paste0(name, ":", idx), nm), , drop = FALSE]
 
-  summ <- function(m) data.frame(
-    coef = rowMeans(m), stderr = apply(m, 1, stats::sd),
-    lower_95 = apply(m, 1, stats::quantile, 0.025, names = FALSE),
-    upper_95 = apply(m, 1, stats::quantile, 0.975, names = FALSE))
+  summ <- function(m) {
+    data.frame(
+      coef = rowMeans(m), stderr = apply(m, 1, stats::sd),
+      lower_95 = apply(m, 1, stats::quantile, 0.025, names = FALSE),
+      upper_95 = apply(m, 1, stats::quantile, 0.975, names = FALSE))
+  }
   info <- design_full$coef_info
   info <- info[info$column != "(Intercept)", , drop = FALSE]
   N_nz <- colSums(!is.na(Y))
@@ -169,8 +176,9 @@
   lambda <- stats::setNames(numeric(K), coef_cols)
   for (k in seq_len(K)) {
     s <- safe[k]
-    lam <- vapply(smp, function(z) z$hyperpar[grep(paste0("^Beta for dPc_", s, "$"),
-                                                   names(z$hyperpar))], numeric(1))
+    lam <- vapply(smp, function(z) {
+      z$hyperpar[grep(paste0("^Beta for dPc_", s, "$"), names(z$hyperpar))]
+    }, numeric(1))
     lambda[k] <- mean(lam)
     uP <- pick(paste0("dP_", s), seq_len(J))
     e <- pick(paste0("eA_", s), seq_len(J))

@@ -181,8 +181,8 @@
   # coefficients and, with reference = "median", for the median itself.
   if (compare) {
     if (!requireNamespace("sn", quietly = TRUE)) {
-      stop("shrinkage = \"hierarchical\" with median comparison needs the sn package: install.packages(\"sn\")",
-           call. = FALSE)
+      stop(paste("shrinkage = \"hierarchical\" with median comparison needs the",
+                 "sn package: install.packages(\"sn\")"), call. = FALSE)
     }
     sel <- c(stats::setNames(as.list(rep(1, length(mu_names))), mu_names),
              stats::setNames(rep(list(seq_len(J)), length(b_names)), b_names))
@@ -204,10 +204,12 @@
       mu <- lat[match(paste0(mu_names[k], ":1"), lat_names), ]
       b <- lat[match(paste0(b_names[k], ":", seq_len(J)), lat_names), , drop = FALSE]
       beta <- sweep(b, 2, mu, "+")                 # J x draws
-      summ <- function(m) data.frame(
-        coef = rowMeans(m), stderr = apply(m, 1, stats::sd),
-        lower_95 = apply(m, 1, stats::quantile, 0.025, names = FALSE),
-        upper_95 = apply(m, 1, stats::quantile, 0.975, names = FALSE))
+      summ <- function(m) {
+        data.frame(
+          coef = rowMeans(m), stderr = apply(m, 1, stats::sd),
+          lower_95 = apply(m, 1, stats::quantile, 0.025, names = FALSE),
+          upper_95 = apply(m, 1, stats::quantile, 0.975, names = FALSE))
+      }
       if (reference == "mean") {
         # Corrected effect u_jk = beta_jk - mu_k: exact INLA marginals.
         u_st <- st

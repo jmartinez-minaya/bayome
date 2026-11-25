@@ -170,7 +170,7 @@ bm_inla_formula <- function(formula, data, response = "y",
   add_info <- function(type, variable, index = NA_character_,
                        weights = NA_character_, f_args = NA_character_,
                        hyper = NA_character_) {
-    term_info[[length(term_info) + 1]] <<- data.frame(
+    term_info[[length(term_info) + 1]] <<- data.frame( # nolint: assignment_linter.
       type = type, variable = variable, index = index, weights = weights,
       f_args = f_args, hyper = hyper, stringsAsFactors = FALSE)
   }
@@ -270,7 +270,9 @@ print.bm_formula <- function(x, ...) {
   re <- if (nrow(x$random)) {
     ifelse(is.na(x$random$slope), paste0("(1 | ", x$random$group, ")"),
            paste0("(0 + ", x$random$slope, " | ", x$random$group, ")"))
-  } else character()
+  } else {
+    character()
+  }
   show("random:", re)
   invisible(x)
 }
@@ -287,8 +289,9 @@ print.bm_inla_model <- function(x, ...) {
 .bm_as_rhs_formula <- function(formula) {
   if (is.character(formula)) {
     formula <- tryCatch(stats::as.formula(paste(formula, collapse = " ")),
-                        error = function(e) stop(sprintf("Invalid formula: %s",
-                                                         formula), call. = FALSE))
+                        error = function(e) {
+                          stop(sprintf("Invalid formula: %s", formula), call. = FALSE)
+                        })
   }
   if (!inherits(formula, "formula")) {
     stop("`formula` must be a formula or a character string.", call. = FALSE)

@@ -395,16 +395,18 @@ bayome <- function(input_data,
       skipped <- skip_reasons(y)
       fit_parts <- setdiff(parts, names(skipped))
 
-      rows <- lapply(names(skipped), function(p)
-        .bm_empty_rows(design_full, p, feature, y, skipped[[p]]))
+      rows <- lapply(names(skipped), function(p) {
+        .bm_empty_rows(design_full, p, feature, y, skipped[[p]])
+      })
       row_draws <- lapply(rows, na_draws)
       if (length(fit_parts)) {
         design <- get_design(fit_parts)
         fit <- .bm_fit_feature(y, design, control)
         if (is.character(fit)) {
-          failed <- lapply(fit_parts, function(p)
+          failed <- lapply(fit_parts, function(p) {
             .bm_empty_rows(design_full, p, feature, y,
-                           paste("INLA error:", fit)))
+                           paste("INLA error:", fit))
+          })
           rows <- c(rows, failed)
           row_draws <- c(row_draws, lapply(failed, na_draws))
         } else {
