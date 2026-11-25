@@ -1,0 +1,48 @@
+# R session files
+.Rhistory
+.Rapp.history
+.RData
+.Rdata
+.Ruserdata
+.httr-oauth
+
+# RStudio / Positron
+.Rproj.user/
+*.Rproj
+.positron/
+
+# Package build and check output
+*.tar.gz
+*.Rcheck/
+/doc/
+/Meta/
+docs/
+src/*.o
+src/*.so
+src/*.dll
+
+# Rendered vignettes and knitr caches
+vignettes/*.html
+vignettes/*.pdf
+*_cache/
+*_files/
+
+# bayome output folders from local runs
+bayome_output/
+*_output/
+
+# Saved R objects and large local data
+*.rds
+data-raw/*.tsv
+data-raw/*.csv
+
+# Benchmark results and logs (regenerable)
+benchmarks/results/
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

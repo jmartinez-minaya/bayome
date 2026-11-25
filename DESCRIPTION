@@ -1,0 +1,34 @@
+Package: bayome
+Type: Package
+Title: Bayesian Occurrence-Abundance Microbiome Estimation
+Version: 0.0.0.9000
+Authors@R:
+    person("Joaquín", "Martínez-Minaya",
+           email = "jmartinezminaya@hsph.harvard.edu",
+           role = c("aut", "cre"))
+Description: Bayesian models for microbiome association studies. The
+    occurrence (presence/absence) and the abundance of each feature are
+    modelled together, the abundance effects are linked to the occurrence
+    effects, and information is shared across features, which stabilises
+    the estimates of features with few observations. Models are fitted with
+    the integrated nested Laplace approximation ('R-INLA'). The interface is
+    compatible with 'MaAsLin3' (Nickols et al. 2026
+    <doi:10.1038/s41592-025-02923-9>): the same arguments, the same
+    'lme4'-style formulas and the same output columns.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.1.0)
+Imports:
+    reformulas,
+    stats,
+    utils
+Suggests:
+    INLA,
+    maaslin3,
+    sn,
+    testthat (>= 3.0.0)
+Additional_repositories: https://inla.r-inla-download.org/R/stable
+Config/testthat/edition: 3
