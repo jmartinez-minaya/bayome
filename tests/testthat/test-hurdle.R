@@ -239,6 +239,36 @@ test_that("joint model links abundance to prevalence and returns both parts", {
   expect_true(all(ok$null_hypothesis[ok$model == "prevalence"] == 0))
 })
 
+test_that("joint model gives the full structure to the exposure only", {
+  skip_if_not_installed("INLA")
+  s <- sim_hurdle(J = 6)
+  set.seed(3)
+  expect_message(
+    fit <- bayome(s$counts, s$meta, formula = ~ diagnosis + age + (1 | subject),
+                  n_draws = 300, save_models = TRUE, verbosity = "INFO"),
+    "exposure = \"diagnosis\"")
+  expect_named(fit$lambda, "diagnosisCD")
+  expect_identical(fit$settings$exposure, "diagnosis")
+  r <- fit$results[is.na(fit$results$error), ]
+  # Adjustment covariate: estimated in both parts, finite.
+  age <- r[r$name == "age", ]
+  expect_setequal(unique(age$model), c("prevalence", "abundance"))
+  expect_true(all(is.finite(age$coef) & age$lower_95 <= age$upper_95))
+  # Only the exposure adds hyperparameters: lambda and tau for diagnosisCD,
+  # plus one random-effect precision per part.
+  hp <- rownames(fit$fits$joint$summary.hyperpar)
+  expect_length(hp, 4)
+  expect_false(any(grepl("age", hp)))
+
+  # Every covariate as exposure: one lambda each.
+  fit2 <- bayome(s$counts, s$meta, formula = ~ diagnosis + age,
+                 exposure = c("diagnosis", "age"), n_draws = 300,
+                 verbosity = "quiet")
+  expect_named(fit2$lambda, c("diagnosisCD", "age"))
+  expect_error(bayome(s$counts, s$meta, formula = ~ diagnosis, exposure = "nope",
+                      verbosity = "quiet"), "not found")
+})
+
 test_that("selection rules give the expected q-values", {
   res <- data.frame(
     feature = rep(c("a", "b", "c"), each = 2), name = "x",

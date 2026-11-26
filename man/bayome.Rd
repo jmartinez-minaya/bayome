@@ -28,6 +28,7 @@ bayome(
   prior = bm_prior(),
   link = c("none", "shared"),
   shrinkage = c("joint", "none", "hierarchical"),
+  exposure = NULL,
   hierarchical_reference = c("mean", "median"),
   hierarchical_variance = c("vb", "plugin", "estimated"),
   int_strategy = c("auto", "ccd", "grid", "eb"),
@@ -88,6 +89,10 @@ Prevalence: one effect per feature, \code{u_P ~ N(0, 2.5^2)} (fixed, no
 pooling). Abundance: \code{u_A = lambda * u_P + e}, where \code{lambda} (one per
 covariate, \code{N(0, 1)} prior) links abundance to prevalence and
 \code{e ~ N(0, 1/tau)} is shared across features (PC prior on \code{tau}).
+This structure is used for the \code{exposure} only; the other covariates
+(adjustment covariates) get one effect per feature and part with a
+fixed \code{N(0, 2.5^2)} prior (see \code{bm_prior(adjustment_sd = )}): no
+pooling, no link and no extra hyperparameters.
 Formula random effects get one copy per part, replicated per feature.
 Residual variances by \code{"vb"}; compositional reference: the median over
 features, on joint posterior samples. Features without both presences
@@ -104,6 +109,15 @@ mass at the reference, so \code{lfsr} controls sign errors, not point
 nulls. Does not support \code{ordered()} or \code{link = "shared"} yet;
 thresholds are not used.
 }}
+
+\item{exposure}{With \code{shrinkage = "joint"}, the variable(s) of interest:
+names of fixed-effect variables of the formula (for example
+\code{"diagnosis"}). Their coefficients get the full joint structure (link
+\code{lambda} to prevalence and information shared across features, two
+hyperparameters per coefficient); the other covariates are adjustment
+covariates with one effect per feature. Default: the first variable of
+the formula. To give every covariate the full structure, list them all.
+Not used by the other \code{shrinkage} options.}
 
 \item{hierarchical_reference}{Compositional reference used by
 \code{shrinkage = "hierarchical"} under median comparison:
@@ -135,10 +149,14 @@ feature, which makes the fit much slower as the number of features
 grows; needs \code{int_strategy = "eb"} with many features.
 }}
 
-\item{int_strategy}{How INLA integrates over the hyperparameters when
-\code{hierarchical_variance = "estimated"} (INLA's \code{int.strategy}):
-\code{"auto"}, \code{"ccd"}, \code{"grid"} or \code{"eb"} (empirical Bayes: only the
-posterior mode of the hyperparameters, much faster with many of them).}
+\item{int_strategy}{How INLA integrates over the hyperparameters (INLA's
+\code{int.strategy}): \code{"auto"}, \code{"ccd"}, \code{"grid"} or \code{"eb"} (empirical Bayes:
+only the posterior mode of the hyperparameters, much faster with many of
+them). With \code{shrinkage = "joint"}, \code{"auto"} means \code{"eb"}: the model has
+several hyperparameters per coefficient, well estimated from all
+features, and integrating over them (\code{"ccd"}) changes the results little
+but makes the final fit several times slower. Otherwise it applies to
+the hierarchical fits and to \code{hierarchical_variance = "estimated"}.}
 
 \item{median_comparison_abundance, median_comparison_prevalence}{Compare
 each coefficient with the median of that coefficient across features
@@ -182,8 +200,10 @@ rate). Too liberal when many features have no effect.
 
 \item{cores}{Number of threads used by INLA.}
 
-\item{verbosity}{\code{"FINEST"}, \code{"DEBUG"} or \code{"INFO"} print progress; any
-other value is quiet.}
+\item{verbosity}{\code{"FINEST"}, \code{"DEBUG"} or \code{"INFO"} print progress (with
+\code{shrinkage = "joint"}, also each \code{"vb"} iteration with its time, the
+final fit and the posterior sampling); any other value, such as
+\code{"WARN"}, is quiet.}
 
 \item{...}{Other \code{maaslin3()} arguments. They are accepted for
 compatibility but not used yet; a warning lists them.}
@@ -191,7 +211,9 @@ compatibility but not used yet; a warning lists them.}
 \value{
 An object of class \code{bayome}: a list with \code{results} (one row per
 feature, coefficient and model part), \code{fits} (INLA fits if
-\code{save_models = TRUE}), the processed \code{data} and \code{metadata}, the INLA
+\code{save_models = TRUE}), \code{lambda} (the estimated prevalence-abundance
+links, one per coefficient, with \code{shrinkage = "joint"}; otherwise
+\code{NULL}), the processed \code{data} and \code{metadata}, the INLA
 \code{model} specification and the \code{settings}. Results columns follow
 MaAsLin3 (\code{feature}, \code{metadata}, \code{value}, \code{name}, \code{coef}, \code{stderr},
 \code{qval_individual}, \code{qval_joint}, \code{error}, \code{model}, \code{N}, \code{N_not_zero}):

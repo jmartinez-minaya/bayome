@@ -49,6 +49,10 @@
 #'     pooling). Abundance: `u_A = lambda * u_P + e`, where `lambda` (one per
 #'     covariate, `N(0, 1)` prior) links abundance to prevalence and
 #'     `e ~ N(0, 1/tau)` is shared across features (PC prior on `tau`).
+#'     This structure is used for the `exposure` only; the other covariates
+#'     (adjustment covariates) get one effect per feature and part with a
+#'     fixed `N(0, 2.5^2)` prior (see `bm_prior(adjustment_sd = )`): no
+#'     pooling, no link and no extra hyperparameters.
 #'     Formula random effects get one copy per part, replicated per feature.
 #'     Residual variances by `"vb"`; compositional reference: the median over
 #'     features, on joint posterior samples. Features without both presences
@@ -64,6 +68,14 @@
 #'     mass at the reference, so `lfsr` controls sign errors, not point
 #'     nulls. Does not support `ordered()` or `link = "shared"` yet;
 #'     thresholds are not used.
+#' @param exposure With `shrinkage = "joint"`, the variable(s) of interest:
+#'   names of fixed-effect variables of the formula (for example
+#'   `"diagnosis"`). Their coefficients get the full joint structure (link
+#'   `lambda` to prevalence and information shared across features, two
+#'   hyperparameters per coefficient); the other covariates are adjustment
+#'   covariates with one effect per feature. Default: the first variable of
+#'   the formula. To give every covariate the full structure, list them all.
+#'   Not used by the other `shrinkage` options.
 #' @param hierarchical_reference Compositional reference used by
 #'   `shrinkage = "hierarchical"` under median comparison:
 #'   * `"mean"` (default): the latent common centre `mu_k`. The corrected
@@ -88,10 +100,14 @@
 #'     every precision with its uncertainty. Adds one hyperparameter per
 #'     feature, which makes the fit much slower as the number of features
 #'     grows; needs `int_strategy = "eb"` with many features.
-#' @param int_strategy How INLA integrates over the hyperparameters when
-#'   `hierarchical_variance = "estimated"` (INLA's `int.strategy`):
-#'   `"auto"`, `"ccd"`, `"grid"` or `"eb"` (empirical Bayes: only the
-#'   posterior mode of the hyperparameters, much faster with many of them).
+#' @param int_strategy How INLA integrates over the hyperparameters (INLA's
+#'   `int.strategy`): `"auto"`, `"ccd"`, `"grid"` or `"eb"` (empirical Bayes:
+#'   only the posterior mode of the hyperparameters, much faster with many of
+#'   them). With `shrinkage = "joint"`, `"auto"` means `"eb"`: the model has
+#'   several hyperparameters per coefficient, well estimated from all
+#'   features, and integrating over them (`"ccd"`) changes the results little
+#'   but makes the final fit several times slower. Otherwise it applies to
+#'   the hierarchical fits and to `hierarchical_variance = "estimated"`.
 #' @param median_comparison_abundance,median_comparison_prevalence Compare
 #'   each coefficient with the median of that coefficient across features
 #'   instead of with zero, as in `maaslin3()`. This corrects for
@@ -126,14 +142,18 @@
 #'   1.4-fold change).
 #' @param save_models Keep the INLA fit of every feature in the result.
 #' @param cores Number of threads used by INLA.
-#' @param verbosity `"FINEST"`, `"DEBUG"` or `"INFO"` print progress; any
-#'   other value is quiet.
+#' @param verbosity `"FINEST"`, `"DEBUG"` or `"INFO"` print progress (with
+#'   `shrinkage = "joint"`, also each `"vb"` iteration with its time, the
+#'   final fit and the posterior sampling); any other value, such as
+#'   `"WARN"`, is quiet.
 #' @param ... Other `maaslin3()` arguments. They are accepted for
 #'   compatibility but not used yet; a warning lists them.
 #'
 #' @return An object of class `bayome`: a list with `results` (one row per
 #'   feature, coefficient and model part), `fits` (INLA fits if
-#'   `save_models = TRUE`), the processed `data` and `metadata`, the INLA
+#'   `save_models = TRUE`), `lambda` (the estimated prevalence-abundance
+#'   links, one per coefficient, with `shrinkage = "joint"`; otherwise
+#'   `NULL`), the processed `data` and `metadata`, the INLA
 #'   `model` specification and the `settings`. Results columns follow
 #'   MaAsLin3 (`feature`, `metadata`, `value`, `name`, `coef`, `stderr`,
 #'   `qval_individual`, `qval_joint`, `error`, `model`, `N`, `N_not_zero`):
@@ -187,6 +207,7 @@ bayome <- function(input_data,
                      prior = bm_prior(),
                      link = c("none", "shared"),
                      shrinkage = c("joint", "none", "hierarchical"),
+                     exposure = NULL,
                      hierarchical_reference = c("mean", "median"),
                      hierarchical_variance = c("vb", "plugin", "estimated"),
                      int_strategy = c("auto", "ccd", "grid", "eb"),
@@ -243,6 +264,22 @@ bayome <- function(input_data,
                                   ordered_effects, strata_effects)
   }
   parsed <- bm_parse_formula(formula)
+  candidates <- c(parsed$fixed, parsed$group)
+  if (shrinkage == "joint") {
+    if (is.null(exposure)) {
+      if (!length(candidates)) {
+        stop("The joint model needs at least one covariate.", call. = FALSE)
+      }
+      exposure <- candidates[1]
+      say(sprintf(paste0("exposure = \"%s\" (the first variable of the formula); ",
+                         "the other covariates are adjustment covariates."), exposure))
+    }
+    miss <- setdiff(exposure, candidates)
+    if (length(miss)) {
+      stop(sprintf("`exposure` must be fixed-effect variables of the formula; not found: %s.",
+                   paste(miss, collapse = ", ")), call. = FALSE)
+    }
+  }
 
   aligned <- .bm_align_samples(input_data, input_metadata)
   metadata <- .bm_apply_reference(aligned$metadata, reference)
@@ -273,7 +310,7 @@ bayome <- function(input_data,
   design_full <- get_design(parts)
   n_fixed <- ncol(design_full$X)
   control <- list(num.threads = paste0(cores, ":1"), int_strategy = int_strategy,
-                  vb_tol = 0.01, vb_max_iter = 10)
+                  vb_tol = 0.01, vb_max_iter = 10, say = say)
 
   compare <- c(
     prevalence = median_comparison_prevalence && "prevalence" %in% parts,
@@ -300,6 +337,7 @@ bayome <- function(input_data,
   }
 
   fits <- list()
+  lambda <- NULL
   if (shrinkage == "joint") {
     if (link == "shared") {
       warning("link = \"shared\" is not used with shrinkage = \"joint\".", call. = FALSE)
@@ -317,10 +355,12 @@ bayome <- function(input_data,
     if (sum(ok_prev | ok_abun) >= 2) {
       say(sprintf("Fitting the joint model for %d features (%d prevalence, %d abundance)...",
                   sum(ok_prev | ok_abun), sum(ok_prev), sum(ok_abun)))
+      info <- design_full$coef_info
+      exposure_cols <- info$column[info$metadata %in% exposure]
       jf <- tryCatch(
         .bm_fit_joint(features, ok_prev, ok_abun, model, design_full, prior,
                       compare, subtract_median, control,
-                      n_draws = min(n_draws, 1000)),
+                      n_draws = min(n_draws, 1000), exposure_cols = exposure_cols),
         error = function(e) conditionMessage(e))
       if (is.character(jf)) {
         for (j in which(ok_prev | ok_abun)) {
@@ -333,6 +373,7 @@ bayome <- function(input_data,
       } else {
         pieces[[length(pieces) + 1]] <- jf$results
         if (save_models) fits$joint <- jf$fit
+        lambda <- jf$lambda
         say(sprintf("Prevalence-abundance link (lambda): %s",
                     paste(sprintf("%s = %.2f", names(jf$lambda), jf$lambda), collapse = ", ")))
       }
@@ -446,6 +487,7 @@ bayome <- function(input_data,
     list(
       results = res,
       fits = if (save_models) fits else NULL,
+      lambda = lambda,
       data = features,
       metadata = metadata,
       model = model,
@@ -456,7 +498,7 @@ bayome <- function(input_data,
         min_variance = min_variance, max_significance = max_significance,
         normalization = normalization, transform = transform,
         standardize = standardize, evaluate_only = evaluate_only,
-        prior = prior, link = link, shrinkage = shrinkage,
+        prior = prior, link = link, shrinkage = shrinkage, exposure = exposure,
         hierarchical_reference = hierarchical_reference,
         hierarchical_variance = hierarchical_variance, int_strategy = int_strategy,
         median_comparison_abundance = median_comparison_abundance,

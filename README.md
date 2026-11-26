@@ -22,6 +22,8 @@ The arguments, formulas and output columns follow
 [MaAsLin3](https://github.com/biobakery/maaslin3), so an existing MaAsLin3
 analysis runs by changing only the function name.
 
+Website and worked example: <https://jmartinez-minaya.github.io/bayome/>
+
 > **Status:** early development (version 0.0.0.9000). The default model
 > (`shrinkage = "joint"`) and the default selection rule
 > (`selection = "bh_lfsr"`) work and are tested on simulated data, not yet
@@ -57,6 +59,7 @@ fit <- bayome(
   input_metadata = meta,      # samples in rows
   output         = "bayome_output",
   formula        = ~ diagnosis + age + (1 | subject),
+  exposure       = "diagnosis", # variable of interest; age is an adjustment
   reference      = "diagnosis,nonIBD"
 )
 
@@ -66,6 +69,18 @@ head(fit$results)
 
 `output` gets `all_results.tsv` and `significant_results.tsv`. Use
 `output = NULL` to keep the results in R only.
+
+Plots (ggplot2 objects):
+
+```r
+bm_plot_summary(fit)                              # top features, all coefficients
+bm_plot_effects(fit, "diagnosisCD")               # effects with credible intervals
+bm_plot_link(fit, "diagnosisCD")                  # prevalence vs abundance effects
+bm_plot_association(fit, "Faecalibacterium_prausnitzii", "diagnosis")  # the data
+```
+
+The vignette ("Getting started with bayome") runs the whole workflow on the
+HMP2 inflammatory bowel disease data included in the package.
 
 ## The model
 
@@ -84,7 +99,10 @@ standardised by default.
 
 ### The default model (`shrinkage = "joint"`)
 
-All features and both parts go into **one** INLA model. For covariate *k*
+All features and both parts go into **one** INLA model. The model
+distinguishes the **exposure** (`exposure = "diagnosis"`: the variable of
+interest; by default the first variable of the formula) from the
+**adjustment covariates** (all the others). For an exposure coefficient *k*
 (for example `diagnosisCD`), the effect on feature *j* is split as:
 
 - **Prevalence:** β<sub>jk</sub><sup>P</sup> = μ<sub>k</sub><sup>P</sup> + *u*<sub>jk</sub><sup>P</sup>,
@@ -93,20 +111,27 @@ All features and both parts go into **one** INLA model. For covariate *k*
 - **Abundance:** β<sub>jk</sub><sup>A</sup> = μ<sub>k</sub><sup>A</sup> + **λ<sub>k</sub> · *u*<sub>jk</sub><sup>P</sup>** + *e*<sub>jk</sub>,
   with *e*<sub>jk</sub> ~ N(0, 1/τ<sub>k</sub>) shared across features.
 
-**λ<sub>k</sub>** is one number per covariate, estimated from all features:
+**λ<sub>k</sub>** is one number per exposure coefficient, estimated from all features:
 how much abundance tends to follow prevalence in these data. A feature with
 few non-zero samples has its abundance effect shrunk towards what its
 prevalence effect suggests, instead of towards zero. When prevalence and
 abundance are unrelated, λ<sub>k</sub> ≈ 0 and the model reduces to an
 independent hierarchical abundance model.
 
+Each **adjustment covariate** *l* (for example age or antibiotic use) gets
+one effect per feature and part, γ<sub>jl</sub> ~ N(0, 2.5²) with a fixed
+prior: no pooling, no link and no extra hyperparameters. So the model has two
+hyperparameters per exposure coefficient (λ<sub>k</sub> and τ<sub>k</sub>)
+plus the variances of the random effects, however many adjustment
+covariates there are. To give every covariate the full structure, list them
+all in `exposure`.
+
 Random effects of the formula (for example `(1 | subject)`) get one copy
 per part, replicated per feature with a shared variance. Residual variances
 are one per feature, estimated with `"vb"` (variational updates with a
 common prior). The abundance effects are compared with their median over
 features (compositional correction). The estimated λ values are printed
-during the fit and stored in `attr(fit$fits$joint, "bm_lambda")` with
-`save_models = TRUE`.
+during the fit and stored in `fit$lambda`.
 
 The alternatives are `shrinkage = "hierarchical"` (each part separately,
 with a common prior for each) and `shrinkage = "none"` (each feature on its
@@ -123,6 +148,7 @@ Priors are set with `bm_prior()`:
 | Between-feature SD (`"joint"`: abundance *e*; `"hierarchical"`: both parts) | PC prior, P(σ > 1) = 0.01 (set with `bm_prior(random = )`) |
 | Prevalence effect per feature *u*<sup>P</sup> (`"joint"`) | Normal(0, 2.5²), fixed (no pooling; set with `bm_prior(fixed_sd_prevalence = )`) |
 | Prevalence–abundance link λ (`"joint"`) | Normal(0, 1) |
+| Adjustment covariate effect per feature γ (`"joint"`) | Normal(0, 2.5²), fixed, both parts (set with `bm_prior(adjustment_sd = )`) |
 | `strata()` | iid effect with fixed, very small precision |
 
 ### Compositional correction
@@ -239,6 +265,8 @@ Bayesian settings:
 - `shrinkage`: `"joint"` (default), `"hierarchical"` or `"none"`; see
   [Sharing information across features](#sharing-information-across-features).
   With `evaluate_only`, `"hierarchical"` is used instead of `"joint"`.
+- `exposure`: the variable(s) of interest for `"joint"` (default: the first
+  variable of the formula); the other covariates are adjustment covariates.
 - `selection`: `"bh_lfsr"` (default), `"rope"` or `"lfsr"`, and
   `rope_delta` (default 0.5); see [Selecting associations](#selecting-associations).
 - `prior`: priors, from `bm_prior()`.
@@ -272,8 +300,8 @@ ignored, with a warning.
 - [ ] Joint inference for `group()` variables
 - [ ] Correlated random effects `(x | g)` (`iid2d` / `iidkd`)
 - [ ] Count likelihoods with sequencing depth as an offset
-- [ ] Plots
-- [ ] Vignette
+- [x] Plots
+- [x] Vignette with the HMP2 example data
 
 ## Acknowledgements
 

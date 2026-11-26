@@ -10,7 +10,8 @@ The occurrence (presence/absence) and the abundance of each feature are
 modelled together: abundance effects are linked to occurrence effects and
 information is shared across features. Users write the same formulas as
 in \code{maaslin3()}; bayome translates them into INLA models. See \code{\link[=bayome]{bayome()}},
-\code{\link[=bm_prior]{bm_prior()}}, \code{\link[=bm_parse_formula]{bm_parse_formula()}} and \code{\link[=bm_inla_formula]{bm_inla_formula()}}.
+\code{\link[=bm_prior]{bm_prior()}}, \code{\link[=bm_parse_formula]{bm_parse_formula()}} and \code{\link[=bm_inla_formula]{bm_inla_formula()}}; results are
+plotted with the functions in \link{bm_plot}.
 }
 \details{
 bayome is an independent package, not part of 'MaAsLin3' or 'bioBakery'.
@@ -26,8 +27,22 @@ extending generalized multivariable linear models for meta-omic
 association discovery. Nature Methods, 23, 554-564.
 \doi{10.1038/s41592-025-02923-9}
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://jmartinez-minaya.github.io/bayome/}
+  \item \url{https://github.com/jmartinez-minaya/bayome}
+  \item Report bugs at \url{https://github.com/jmartinez-minaya/bayome/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Joaquín Martínez-Minaya \email{jmartinezminaya@hsph.harvard.edu}
+
+Authors:
+\itemize{
+  \item Joaquín Martínez-Minaya \email{jmartinezminaya@hsph.harvard.edu}
+}
 
 }
 \keyword{internal}

@@ -1,0 +1,275 @@
+---
+title: "Getting started with bayome"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with bayome}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
+                      fig.height = 5)
+```
+
+This vignette runs bayome on a real data set: stool metagenomes from the
+inflammatory bowel disease cohort of the Integrative Human Microbiome Project
+(HMP2 / IBDMDB). It shows how to
+
+1. prepare the data and write the model formula,
+2. fit the default model,
+3. read the results: effects, intervals, local false sign rates and q-values,
+4. plot them,
+5. look at the estimated link between prevalence and abundance,
+6. change the selection rule and the priors.
+
+Fitting the model takes several minutes, so the vignette shows the call and
+then reads results saved by `data-raw/hmp2_example.R`, which runs exactly that
+call.
+
+```{r library}
+library(bayome)
+```
+
+## The data
+
+The package includes the HMP2 example data distributed with MaAsLin3: the
+relative abundances of 151 species in 1527 stool samples, and the metadata of
+those samples. See `inst/extdata/README.md` for the source and the citations.
+
+```{r data}
+taxa <- read.delim(system.file("extdata", "HMP2_taxonomy.tsv",
+                               package = "bayome"), row.names = 1)
+meta <- read.delim(system.file("extdata", "HMP2_metadata.tsv",
+                               package = "bayome"), row.names = 1)
+dim(taxa)
+taxa[1:3, 1:3]
+```
+
+Each participant gave several samples over time:
+
+```{r participants}
+length(unique(meta$participant_id))
+summary(as.vector(table(meta$participant_id)))
+table(meta$diagnosis)
+```
+
+Many species are present in only a few samples. These are the features for
+which sharing information across features matters most:
+
+```{r prevalence}
+n_present <- colSums(taxa > 0)
+summary(n_present)
+sum(n_present < 30)
+```
+
+We set the reference levels explicitly: healthy controls (`nonIBD`) and no
+antibiotics.
+
+```{r factors}
+meta$diagnosis <- factor(meta$diagnosis, levels = c("nonIBD", "UC", "CD"))
+meta$antibiotics <- factor(meta$antibiotics, levels = c("No", "Yes"))
+```
+
+## The model formula
+
+The question is how the microbiome differs between patients with Crohn's
+disease (CD) or ulcerative colitis (UC) and controls, so the **exposure** is
+`diagnosis`. Antibiotic use, age and sequencing depth (`reads`) are
+**adjustment covariates**. Repeated samples of the same participant are
+handled with a random intercept, `(1 | participant_id)`. The formula uses
+lme4 notation; `bm_inla_formula()` shows how bayome translates it for INLA,
+without fitting anything:
+
+```{r formula}
+form <- ~ diagnosis + antibiotics + age + reads + (1 | participant_id)
+bm_inla_formula(form, meta)
+```
+
+The dysbiosis score of the HMP2 metadata is not used: it is computed from
+the microbiome itself, so it is closer to an outcome than to a covariate.
+
+## Fitting the model
+
+```{r fit, eval = FALSE}
+set.seed(1)
+fit <- bayome(
+  input_data     = taxa,
+  input_metadata = meta,
+  output         = "hmp2_bayome",
+  formula        = form,
+  exposure       = "diagnosis",
+  normalization  = "TSS",
+  transform      = "LOG",
+  cores          = 4
+)
+```
+
+The default model (`shrinkage = "joint"`) fits all species and both parts in
+one INLA model. For the exposure (`diagnosisUC` and `diagnosisCD`):
+
+- **prevalence** (presence/absence, all samples): a logistic model, with each
+  species estimated from its own data;
+- **abundance** (log2 relative abundance, samples where the species is
+  present): a linear model whose species effects are linked to the
+  prevalence effects, `u_A = lambda * u_P + e`, and share a common prior.
+
+The adjustment covariates get one effect per species and part, with a fixed,
+weakly informative prior, so they add no hyperparameters. Here the model has
+six: `lambda` and the spread of `e` for CD and for UC, and the variance of
+the participant effect in each part. The residual variances, one per
+species, are estimated outside INLA by variational updates (`"vb"`).
+
+Continuous covariates (`age`, `reads`) are standardised, abundance effects
+are compared with their median across species (compositional correction),
+and associations are selected by Benjamini–Hochberg on 2·lfsr.
+
+`fit$results` holds the results table, and `output` gets
+`all_results.tsv` and `significant_results.tsv`. Here we read the saved
+results:
+
+```{r read-results}
+res <- read.delim(system.file("extdata", "HMP2_bayome_results.tsv",
+                              package = "bayome"))
+info <- read.delim(system.file("extdata", "HMP2_bayome_lambda.tsv",
+                               package = "bayome"))
+```
+
+The fit took `r info$minutes[1]` minutes on a laptop with 4 threads.
+
+## The results table
+
+There is one row per species, coefficient and model part:
+
+```{r results}
+str(res)
+```
+
+`coef` is the posterior mean, `lower_95` and `upper_95` the 95% credible
+interval, `lfsr` the probability that the sign of `coef` is wrong, and
+`qval_individual` the q-value of the selection rule. There are no p-values.
+
+Number of associations at `qval_individual <= 0.1`, per coefficient and
+model part:
+
+```{r count}
+sig <- res[!is.na(res$qval_individual) & res$qval_individual <= 0.1 &
+             is.na(res$error), ]
+table(sig$name, sig$model)
+```
+
+The strongest associations with Crohn's disease (`diagnosisCD`) in abundance:
+
+```{r top-cd}
+cd_abun <- sig[sig$name == "diagnosisCD" & sig$model == "abundance", ]
+cd_abun <- cd_abun[order(cd_abun$qval_individual), ]
+head(cd_abun[, c("feature", "coef", "lower_95", "upper_95", "lfsr",
+                 "qval_individual", "N_not_zero")], 10)
+```
+
+Abundance effects are on the log2 scale: a `coef` of −2 means that, when the
+species is present, its relative abundance is about four times lower in
+Crohn's disease than in controls, relative to the median species.
+
+## Plots
+
+All plot functions take a `bayome` fit or its results table, and return a
+`ggplot` object that can be modified or saved with `ggplot2::ggsave()`.
+
+**Overview.** `bm_plot_summary()` shows the effects of the top species on
+every coefficient, with the selected associations marked: the exposure in
+the coefficient plot on the left (the default for a fit; with a results
+table we name the coefficients) and the adjustment covariates in the
+heatmap:
+
+```{r summary, fig.width = 9, fig.height = 8}
+bm_plot_summary(res, n_top = 30, coef_names = c("diagnosisUC", "diagnosisCD"))
+```
+
+**Effects with their intervals.** `bm_plot_effects()` shows one coefficient
+in both parts, with 95% credible intervals:
+
+```{r effects, fig.height = 7}
+bm_plot_effects(res, "diagnosisCD", n_top = 25)
+```
+
+**The data behind an association.** `bm_plot_association()` shows, for one
+species and one variable, the share of samples where the species is present
+and its abundance where present. With a fit it uses `fit$data` and
+`fit$metadata`; here we build the same log2 table from the raw data:
+
+```{r association}
+abun <- as.matrix(taxa / rowSums(taxa))
+abun[abun == 0] <- NA
+abun <- as.data.frame(log2(abun))
+top_cd <- cd_abun$feature[1]
+bm_plot_association(res, top_cd, "diagnosis", data = abun, metadata = meta)
+```
+
+## The link between prevalence and abundance
+
+The model estimates one link `lambda` per exposure coefficient: how much the
+abundance effects follow the prevalence effects across species. With
+`lambda` near 0 the two parts are unrelated and the abundance part reduces
+to a hierarchical model; with `lambda > 0`, species that become less
+frequent also tend to become less abundant when present.
+
+```{r lambda}
+info[, c("name", "lambda")]
+```
+
+`bm_plot_link()` shows the prevalence and abundance effects of each species
+for one coefficient. With a fit, the estimated `lambda` appears in the
+subtitle; `fit$lambda` holds all of them.
+
+```{r link}
+bm_plot_link(res, "diagnosisCD")
+```
+
+For a species with few non-zero samples, the abundance effect borrows from
+its prevalence effect through `lambda`, instead of being shrunk towards
+zero.
+
+## Choosing a selection rule
+
+`selection` sets how the posterior probabilities become q-values:
+
+- `"bh_lfsr"` (default): Benjamini–Hochberg on 2·lfsr;
+- `"rope"`: posterior probability that the effect is practically null,
+  P(|effect| ≤ `rope_delta`), with `rope_delta = 0.5` by default;
+- `"lfsr"`: running mean of the sorted lfsr.
+
+The rule only changes the q-values, not the posteriors, so it can be
+compared on the saved `lfsr`. For `diagnosisCD` in abundance:
+
+```{r selection}
+d <- res[res$name == "diagnosisCD" & res$model == "abundance" &
+           is.na(res$error), ]
+c(bh_lfsr = sum(p.adjust(pmin(2 * d$lfsr, 1), "BH") <= 0.1),
+  lfsr = sum(bm_qvalue(d$lfsr) <= 0.1))
+```
+
+The running-mean rule selects more: for species without an effect the lfsr
+behaves like a one-sided p-value, so averaging lfsr values lets more of them
+through. The default controls the false discovery rate.
+
+## Priors
+
+Priors are set with `bm_prior()` and passed to `bayome(prior = )`. For
+example, a less informative prior for the prevalence effects of each
+species:
+
+```{r prior}
+pr <- bm_prior(fixed_sd_prevalence = 5)
+pr$fixed
+```
+
+```{r prior-fit, eval = FALSE}
+fit2 <- bayome(taxa, meta, output = NULL, formula = form, prior = pr)
+```
+
+## Session information
+
+```{r session}
+sessionInfo()
+```

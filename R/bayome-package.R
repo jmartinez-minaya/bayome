@@ -5,7 +5,8 @@
 #' modelled together: abundance effects are linked to occurrence effects and
 #' information is shared across features. Users write the same formulas as
 #' in `maaslin3()`; bayome translates them into INLA models. See [bayome()],
-#' [bm_prior()], [bm_parse_formula()] and [bm_inla_formula()].
+#' [bm_prior()], [bm_parse_formula()] and [bm_inla_formula()]; results are
+#' plotted with the functions in [bm_plot].
 #'
 #' bayome is an independent package, not part of 'MaAsLin3' or 'bioBakery'.
 #' Its interface, pre-processing, two-part structure, median comparison and
@@ -21,6 +22,7 @@
 #' \doi{10.1038/s41592-025-02923-9}
 #'
 #' @keywords internal
+#' @importFrom ggplot2 .data
 "_PACKAGE"
 
 # Variables that INLA evaluates inside its `data` argument.

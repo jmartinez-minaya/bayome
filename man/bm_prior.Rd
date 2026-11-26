@@ -9,7 +9,8 @@ bm_prior(
   ordered = c(1, 0.01),
   strata_log_prec = -10,
   fixed_sd_prevalence = 2.5,
-  fixed_sd_abundance = 10
+  fixed_sd_abundance = 10,
+  adjustment_sd = 2.5
 )
 }
 \arguments{
@@ -30,11 +31,19 @@ complete separation (for example a feature present in every case).}
 
 \item{fixed_sd_abundance}{Prior standard deviation of the fixed effects
 (log2 abundance scale) in the abundance model.}
+
+\item{adjustment_sd}{Prior standard deviation of the effect of each
+adjustment covariate on each feature (the covariates that are not the
+\code{exposure} of \code{\link[=bayome]{bayome()}} with \code{shrinkage = "joint"}), in both parts:
+log-odds for prevalence, log2 for abundance. These effects are not
+shared across features, so the prior is fixed; the default, 2.5, is
+weakly informative for standardised covariates.}
 }
 \value{
 An object of class \code{bm_prior}: a list with \code{hyper} (the \code{hyper}
 lists passed to INLA's \code{f()}) and \code{fixed} (prior precisions of the
-fixed effects for the \code{prevalence} and \code{abundance} parts).
+fixed effects for the \code{prevalence} and \code{abundance} parts, and of the
+per-feature \code{adjustment} effects).
 }
 \description{
 Collects the priors used by bayome. Precisions of random effects and of

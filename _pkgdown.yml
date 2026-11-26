@@ -1,0 +1,29 @@
+url: https://jmartinez-minaya.github.io/bayome/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [intro, reference, articles]
+    right: [search, github]
+
+reference:
+  - title: Fitting models
+    contents:
+      - bayome
+      - bm_prior
+  - title: Plots
+    contents:
+      - bm_plot
+  - title: Formulas
+    contents:
+      - bm_parse_formula
+      - bm_compose_formula
+      - bm_inla_formula
+  - title: Selection
+    contents:
+      - bm_qvalue
+  - title: Package
+    contents:
+      - bayome-package

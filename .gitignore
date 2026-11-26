@@ -46,3 +46,11 @@ benchmarks/results/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Log of data-raw scripts
+data-raw/*.log
+data-raw/*_info.txt
+
+# Vignette build output
+vignettes/*.R
+inst/doc/

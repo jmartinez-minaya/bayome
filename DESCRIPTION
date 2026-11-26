@@ -16,18 +16,26 @@ Description: Bayesian models for microbiome association studies. The
     <doi:10.1038/s41592-025-02923-9>): the same arguments, the same
     'lme4'-style formulas and the same output columns.
 License: MIT + file LICENSE
+URL: https://jmartinez-minaya.github.io/bayome/,
+    https://github.com/jmartinez-minaya/bayome
+BugReports: https://github.com/jmartinez-minaya/bayome/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Depends:
     R (>= 4.1.0)
 Imports:
+    ggplot2,
+    patchwork,
     reformulas,
     stats,
     utils
 Suggests:
     INLA,
+    knitr,
+    rmarkdown,
     sn,
     testthat (>= 3.0.0)
+VignetteBuilder: knitr
 Additional_repositories: https://inla.r-inla-download.org/R/stable
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.1
