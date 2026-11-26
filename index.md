@@ -226,7 +226,7 @@ One row per feature, covariate level and model part:
 | `lower_95`, `upper_95` | 95% credible interval |
 | `prob_positive` | Posterior probability that the effect is positive |
 | `lfsr` | Local false sign rate: probability that the sign of `coef` is wrong |
-| `qval_individual` | Q-value within each model part, from the `selection` rule |
+| `qval_individual` | Q-value within each coefficient and model part, from the `selection` rule |
 | `lfsr_joint`, `qval_joint` | Association in at least one of the two parts |
 | `null_hypothesis` | Reference the coefficient is compared with: the median across features under median comparison, otherwise 0 |
 | `error` | Why a part was not fitted, or a warning about the estimate |
@@ -242,7 +242,7 @@ There are no p-values.
 
 | `selection` | Rule |
 |----|----|
-| `"bh_lfsr"` (default) | Benjamini–Hochberg on 2·lfsr within each part; joint q-value from `pbeta(min(p), 1, 2)` then BH |
+| `"bh_lfsr"` (default) | Benjamini–Hochberg on 2·lfsr within each coefficient and part; joint q-value from `pbeta(min(p), 1, 2)` then BH |
 | `"rope"` | Probability that the corrected effect is practically null, P(\|effect\| ≤ `rope_delta`); q-value = running mean of the sorted probabilities |
 | `"lfsr"` | Running mean of the sorted lfsr (Bayesian false sign rate) |
 
@@ -252,6 +252,12 @@ like a one-sided p-value. That is why the default applies
 Benjamini–Hochberg to 2·lfsr, which controls the false discovery rate,
 while the running-mean rules can let null features through when many
 features have no effect.
+
+Every rule is applied **separately for each coefficient** (for example
+`diagnosisCD`): the multiple-testing family is “which features are
+associated with this coefficient”. MaAsLin3 corrects all coefficients
+together; then a covariate with many associations (such as sequencing
+depth) lets null features of the exposure through.
 
 ## Main arguments
 
@@ -310,6 +316,9 @@ Joint prevalence–abundance model with an estimated link λ (`"joint"`,
 default)
 
 Selection rule that controls the FDR (BH on 2·lfsr, default)
+
+Fully Bayesian selection with a spike-and-slab prior (posterior
+probability of no effect, less bias on large effects)
 
 Faster fits with subject effects
 

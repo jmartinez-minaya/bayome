@@ -341,7 +341,7 @@
 </tr>
 <tr>
 <td><code>qval_individual</code></td>
-<td>Q-value within each model part, from the <code>selection</code> rule</td>
+<td>Q-value within each coefficient and model part, from the <code>selection</code> rule</td>
 </tr>
 <tr>
 <td>
@@ -389,7 +389,7 @@
 <tr>
 <td>
 <code>"bh_lfsr"</code> (default)</td>
-<td>Benjamini–Hochberg on 2·lfsr within each part; joint q-value from <code>pbeta(min(p), 1, 2)</code> then BH</td>
+<td>Benjamini–Hochberg on 2·lfsr within each coefficient and part; joint q-value from <code>pbeta(min(p), 1, 2)</code> then BH</td>
 </tr>
 <tr>
 <td><code>"rope"</code></td>
@@ -402,6 +402,7 @@
 </tbody>
 </table>
 <p>The lfsr is a sign-error probability. With continuous priors the posterior puts no mass on “no effect”, so for null features it behaves like a one-sided p-value. That is why the default applies Benjamini–Hochberg to 2·lfsr, which controls the false discovery rate, while the running-mean rules can let null features through when many features have no effect.</p>
+<p>Every rule is applied <strong>separately for each coefficient</strong> (for example <code>diagnosisCD</code>): the multiple-testing family is “which features are associated with this coefficient”. MaAsLin3 corrects all coefficients together; then a covariate with many associations (such as sequencing depth) lets null features of the exposure through.</p>
 </div>
 </div>
 <div class="section level2">
@@ -440,6 +441,7 @@
 <li><label><input type="checkbox" checked>Information sharing across features, with per-feature residual variances estimated by <code>"vb"</code></label></li>
 <li><label><input type="checkbox" checked>Joint prevalence–abundance model with an estimated link λ (<code>"joint"</code>, default)</label></li>
 <li><label><input type="checkbox" checked>Selection rule that controls the FDR (BH on 2·lfsr, default)</label></li>
+<li><label><input type="checkbox">Fully Bayesian selection with a spike-and-slab prior (posterior probability of no effect, less bias on large effects)</label></li>
 <li><label><input type="checkbox">Faster fits with subject effects</label></li>
 <li><label><input type="checkbox"><code><a href="https://rdrr.io/r/base/factor.html" class="external-link">ordered()</a></code> with <code>"joint"</code> and <code>"hierarchical"</code></label></li>
 <li><label><input type="checkbox">Evaluation on real data</label></li>

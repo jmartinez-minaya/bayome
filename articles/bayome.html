@@ -232,11 +232,11 @@ coefficient and model part:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">sig</span><span class="op">$</span><span class="va">name</span>, <span class="va">sig</span><span class="op">$</span><span class="va">model</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 </span></span>
 <span><span class="co">#&gt;                  abundance prevalence</span></span>
-<span><span class="co">#&gt;   age                    7         13</span></span>
-<span><span class="co">#&gt;   antibioticsYes        16         38</span></span>
-<span><span class="co">#&gt;   diagnosisCD            4         10</span></span>
-<span><span class="co">#&gt;   diagnosisUC            4         15</span></span>
-<span><span class="co">#&gt;   reads                 18        102</span></span></code></pre></div>
+<span><span class="co">#&gt;   age                    7          6</span></span>
+<span><span class="co">#&gt;   antibioticsYes        22         38</span></span>
+<span><span class="co">#&gt;   diagnosisCD            3          4</span></span>
+<span><span class="co">#&gt;   diagnosisUC            3         10</span></span>
+<span><span class="co">#&gt;   reads                 25        113</span></span></code></pre></div>
 <p>The strongest associations with Crohn’s disease
 (<code>diagnosisCD</code>) in abundance:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
@@ -244,16 +244,14 @@ coefficient and model part:</p>
 <span><span class="va">cd_abun</span> <span class="op">&lt;-</span> <span class="va">cd_abun</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">cd_abun</span><span class="op">$</span><span class="va">qval_individual</span><span class="op">)</span>, <span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">cd_abun</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"feature"</span>, <span class="st">"coef"</span>, <span class="st">"lower_95"</span>, <span class="st">"upper_95"</span>, <span class="st">"lfsr"</span>,</span>
 <span>                 <span class="st">"qval_individual"</span>, <span class="st">"N_not_zero"</span><span class="op">)</span><span class="op">]</span>, <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                            feature       coef   lower_95   upper_95  lfsr</span></span>
-<span><span class="co">#&gt; 8                  GGB1680_SGB2312 -1.4518326 -2.3479113 -0.4764332 0.000</span></span>
-<span><span class="co">#&gt; 9   Enterocloster_clostridioformis  1.0576777  0.5492628  1.5420425 0.000</span></span>
-<span><span class="co">#&gt; 171          Enterocloster_bolteae  1.0318472  0.5561010  1.4770612 0.001</span></span>
-<span><span class="co">#&gt; 219          Alistipes_onderdonkii -0.2682234 -0.7521080  0.2243882 0.003</span></span>
+<span><span class="co">#&gt;                            feature      coef   lower_95   upper_95  lfsr</span></span>
+<span><span class="co">#&gt; 8                  GGB1680_SGB2312 -1.451833 -2.3479113 -0.4764332 0.000</span></span>
+<span><span class="co">#&gt; 9   Enterocloster_clostridioformis  1.057678  0.5492628  1.5420425 0.000</span></span>
+<span><span class="co">#&gt; 171          Enterocloster_bolteae  1.031847  0.5561010  1.4770612 0.001</span></span>
 <span><span class="co">#&gt;     qval_individual N_not_zero</span></span>
 <span><span class="co">#&gt; 8        0.00000000         12</span></span>
 <span><span class="co">#&gt; 9        0.00000000        312</span></span>
-<span><span class="co">#&gt; 171      0.03894737        866</span></span>
-<span><span class="co">#&gt; 219      0.09061224        831</span></span></code></pre></div>
+<span><span class="co">#&gt; 171      0.09866667        866</span></span></code></pre></div>
 <p>Abundance effects are on the log2 scale: a <code>coef</code> of −2
 means that, when the species is present, its relative abundance is about
 four times lower in Crohn’s disease than in controls, relative to the
@@ -322,7 +320,7 @@ shrunk towards zero.</p>
 <h2 id="choosing-a-selection-rule">Choosing a selection rule<a class="anchor" aria-label="anchor" href="#choosing-a-selection-rule"></a>
 </h2>
 <p><code>selection</code> sets how the posterior probabilities become
-q-values:</p>
+q-values, separately for each coefficient:</p>
 <ul>
 <li>
 <code>"bh_lfsr"</code> (default): Benjamini–Hochberg on 2·lfsr;</li>

@@ -262,9 +262,13 @@ median comparison (at most 1000 joint samples for <code>"joint"</code> and
 
 <dt id="arg-selection">selection<a class="anchor" aria-label="anchor" href="#arg-selection"></a></dt>
 <dd><p>Rule turning posteriors into <code>qval_individual</code> and
-<code>qval_joint</code> (and <code>significant_results.tsv</code>):</p><ul><li><p><code>"bh_lfsr"</code> (default): Benjamini-Hochberg on <code>2 * lfsr</code> within each
-model part; joint as MaAsLin3, <code>pbeta(min(p), 1, 2)</code> then BH. It kept
-the false discovery rate at the nominal level in simulations.</p></li>
+<code>qval_joint</code> (and <code>significant_results.tsv</code>). Every rule is applied
+separately for each coefficient (e.g. <code>diagnosisCD</code>), so covariates
+with many associations do not lend discoveries to the others (MaAsLin3
+pools all coefficients):</p><ul><li><p><code>"bh_lfsr"</code> (default): Benjamini-Hochberg on <code>2 * lfsr</code> within each
+coefficient and model part; joint as MaAsLin3, <code>pbeta(min(p), 1, 2)</code>
+then BH. It kept the false discovery rate at the nominal level in
+simulations.</p></li>
 <li><p><code>"rope"</code>: probability that the corrected effect is practically null,
 <code>P(|effect| &lt;= rope_delta)</code>, from a normal approximation of the
 posterior; q-value = running mean of the sorted probabilities

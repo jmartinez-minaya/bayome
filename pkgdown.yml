@@ -3,7 +3,7 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   bayome: bayome.html
-last_built: 2026-11-26T04:59Z
+last_built: 2026-11-26T17:19Z
 urls:
   reference: https://jmartinez-minaya.github.io/bayome/reference
   article: https://jmartinez-minaya.github.io/bayome/articles

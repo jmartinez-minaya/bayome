@@ -46,5 +46,5 @@ meta <- data.frame(diagnosis = factor(c("CD", "UC", "nonIBD", "CD")),
 m <- bm_inla_formula(~ diagnosis + age + (1 | subject), meta)
 m$formula
 #> y ~ 1 + diagnosis + age + f(.bm_re_subject, model = "iid", hyper = .bm_hyper$random)
-#> <environment: 0x64c5a10da870>
+#> <environment: 0x5cd476332448>
 ```

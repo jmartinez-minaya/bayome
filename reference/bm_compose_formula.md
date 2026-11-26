@@ -33,5 +33,5 @@ A one-sided formula.
 bm_compose_formula(fixed_effects = c("diagnosis", "age"),
                    random_effects = "subject")
 #> ~diagnosis + age + (1 | subject)
-#> <environment: 0x64c5a2a39d98>
+#> <environment: 0x5cd477cb2c80>
 ```

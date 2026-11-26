@@ -205,11 +205,11 @@ sig <- res[!is.na(res$qval_individual) & res$qval_individual <= 0.1 &
 table(sig$name, sig$model)
 #>                 
 #>                  abundance prevalence
-#>   age                    7         13
-#>   antibioticsYes        16         38
-#>   diagnosisCD            4         10
-#>   diagnosisUC            4         15
-#>   reads                 18        102
+#>   age                    7          6
+#>   antibioticsYes        22         38
+#>   diagnosisCD            3          4
+#>   diagnosisUC            3         10
+#>   reads                 25        113
 ```
 
 The strongest associations with Crohn’s disease (`diagnosisCD`) in
@@ -221,16 +221,14 @@ cd_abun <- sig[sig$name == "diagnosisCD" & sig$model == "abundance", ]
 cd_abun <- cd_abun[order(cd_abun$qval_individual), ]
 head(cd_abun[, c("feature", "coef", "lower_95", "upper_95", "lfsr",
                  "qval_individual", "N_not_zero")], 10)
-#>                            feature       coef   lower_95   upper_95  lfsr
-#> 8                  GGB1680_SGB2312 -1.4518326 -2.3479113 -0.4764332 0.000
-#> 9   Enterocloster_clostridioformis  1.0576777  0.5492628  1.5420425 0.000
-#> 171          Enterocloster_bolteae  1.0318472  0.5561010  1.4770612 0.001
-#> 219          Alistipes_onderdonkii -0.2682234 -0.7521080  0.2243882 0.003
+#>                            feature      coef   lower_95   upper_95  lfsr
+#> 8                  GGB1680_SGB2312 -1.451833 -2.3479113 -0.4764332 0.000
+#> 9   Enterocloster_clostridioformis  1.057678  0.5492628  1.5420425 0.000
+#> 171          Enterocloster_bolteae  1.031847  0.5561010  1.4770612 0.001
 #>     qval_individual N_not_zero
 #> 8        0.00000000         12
 #> 9        0.00000000        312
-#> 171      0.03894737        866
-#> 219      0.09061224        831
+#> 171      0.09866667        866
 ```
 
 Abundance effects are on the log2 scale: a `coef` of −2 means that, when
@@ -320,7 +318,8 @@ towards zero.
 
 ## Choosing a selection rule
 
-`selection` sets how the posterior probabilities become q-values:
+`selection` sets how the posterior probabilities become q-values,
+separately for each coefficient:
 
 - `"bh_lfsr"` (default): Benjamini–Hochberg on 2·lfsr;
 - `"rope"`: posterior probability that the effect is practically null,
