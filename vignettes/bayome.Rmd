@@ -232,7 +232,8 @@ zero.
 
 ## Choosing a selection rule
 
-`selection` sets how the posterior probabilities become q-values:
+`selection` sets how the posterior probabilities become q-values, separately
+for each coefficient:
 
 - `"bh_lfsr"` (default): Benjamini–Hochberg on 2·lfsr;
 - `"rope"`: posterior probability that the effect is practically null,

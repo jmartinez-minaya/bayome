@@ -301,10 +301,16 @@ bm_qvalue <- function(lfsr) {
   q
 }
 
-# Adds individual and joint q-values according to the selection rule.
-#   "bh_lfsr" (default): Benjamini-Hochberg on 2 * lfsr, within each model
-#             part. Joint ("associated in at least one part"): as MaAsLin3,
-#             pbeta(min(p_prevalence, p_abundance), 1, 2), then BH.
+# Adds individual and joint q-values according to the selection rule. Every
+# rule is applied separately for each coefficient (`name`, e.g.
+# diagnosisCD): the family of hypotheses is "which features are associated
+# with this coefficient". (MaAsLin3 pools all coefficients of a model part;
+# then covariates with many true effects let null features of another
+# coefficient through.)
+#   "bh_lfsr" (default): Benjamini-Hochberg on 2 * lfsr, within each
+#             coefficient and model part. Joint ("associated in at least one
+#             part"): as MaAsLin3, pbeta(min(p_prevalence, p_abundance), 1, 2),
+#             then BH within each coefficient.
 #   "rope":   probability that the effect is practically null,
 #             P(|delta| <= rope_delta), from a normal approximation of the
 #             posterior of the corrected effect; q-value = running mean of
@@ -343,16 +349,21 @@ bm_qvalue <- function(lfsr) {
     }
   }
   res$qval_individual <- NA_real_
-  for (part in unique(res$model)) {
-    i <- res$model == part
-    res$qval_individual[i] <- adjust(score[i])
+  for (nm in unique(res$name)) for (part in unique(res$model)) {
+    i <- res$name == nm & res$model == part
+    if (any(i)) res$qval_individual[i] <- adjust(score[i])
   }
   sj <- min_by_key(score)
   if (selection == "bh_lfsr") {
     n_parts <- tapply(!is.na(score), key, sum)
     sj <- ifelse(n_parts[names(sj)] >= 2, stats::pbeta(sj, 1, 2), sj)
   }
-  qj <- stats::setNames(adjust(unname(sj)), names(sj))
+  key_name <- res$name[match(names(sj), key)]
+  qj <- stats::setNames(rep(NA_real_, length(sj)), names(sj))
+  for (nm in unique(key_name)) {
+    i <- key_name == nm
+    qj[i] <- adjust(unname(sj[i]))
+  }
   res$qval_joint <- unname(qj[key])
   res
 }

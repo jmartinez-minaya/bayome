@@ -178,11 +178,15 @@ median comparison (at most 1000 joint samples for \code{"joint"} and
 \code{"hierarchical"}).}
 
 \item{selection}{Rule turning posteriors into \code{qval_individual} and
-\code{qval_joint} (and \code{significant_results.tsv}):
+\code{qval_joint} (and \code{significant_results.tsv}). Every rule is applied
+separately for each coefficient (e.g. \code{diagnosisCD}), so covariates
+with many associations do not lend discoveries to the others (MaAsLin3
+pools all coefficients):
 \itemize{
 \item \code{"bh_lfsr"} (default): Benjamini-Hochberg on \code{2 * lfsr} within each
-model part; joint as MaAsLin3, \code{pbeta(min(p), 1, 2)} then BH. It kept
-the false discovery rate at the nominal level in simulations.
+coefficient and model part; joint as MaAsLin3, \code{pbeta(min(p), 1, 2)}
+then BH. It kept the false discovery rate at the nominal level in
+simulations.
 \item \code{"rope"}: probability that the corrected effect is practically null,
 \verb{P(|effect| <= rope_delta)}, from a normal approximation of the
 posterior; q-value = running mean of the sorted probabilities

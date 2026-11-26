@@ -126,10 +126,14 @@
 #'   median comparison (at most 1000 joint samples for `"joint"` and
 #'   `"hierarchical"`).
 #' @param selection Rule turning posteriors into `qval_individual` and
-#'   `qval_joint` (and `significant_results.tsv`):
+#'   `qval_joint` (and `significant_results.tsv`). Every rule is applied
+#'   separately for each coefficient (e.g. `diagnosisCD`), so covariates
+#'   with many associations do not lend discoveries to the others (MaAsLin3
+#'   pools all coefficients):
 #'   * `"bh_lfsr"` (default): Benjamini-Hochberg on `2 * lfsr` within each
-#'     model part; joint as MaAsLin3, `pbeta(min(p), 1, 2)` then BH. It kept
-#'     the false discovery rate at the nominal level in simulations.
+#'     coefficient and model part; joint as MaAsLin3, `pbeta(min(p), 1, 2)`
+#'     then BH. It kept the false discovery rate at the nominal level in
+#'     simulations.
 #'   * `"rope"`: probability that the corrected effect is practically null,
 #'     `P(|effect| <= rope_delta)`, from a normal approximation of the
 #'     posterior; q-value = running mean of the sorted probabilities

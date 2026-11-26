@@ -288,3 +288,24 @@ test_that("selection rules give the expected q-values", {
   expect_gt(rp$qval_individual[3], 0.1)                 # null effect not selected
   expect_gt(rp$qval_individual[3], rp$qval_individual[5])
 })
+
+test_that("q-values are computed separately for each coefficient", {
+  # Coefficient "z" has many strong effects; "x" has none. Pooling them would
+  # let the null features of "x" through.
+  set.seed(1)
+  n <- 100
+  res <- data.frame(
+    feature = rep(sprintf("f%03d", seq_len(n)), 2),
+    name = rep(c("x", "z"), each = n), model = "prevalence",
+    coef = 0, stderr = 1, null_hypothesis = 0,
+    lfsr = c(stats::runif(n, 0.002, 0.5), rep(1e-4, n)), stringsAsFactors = FALSE)
+  bh <- .bm_add_qvalues(res, "bh_lfsr")
+  ix <- res$name == "x"
+  expect_equal(bh$qval_individual[ix], p.adjust(pmin(2 * res$lfsr[ix], 1), "BH"))
+  expect_true(all(bh$qval_individual[ix] > 0.1))
+  expect_true(all(bh$qval_individual[!ix] < 0.01))
+  # Pooled BH would have selected some null features of "x".
+  pooled <- p.adjust(pmin(2 * res$lfsr, 1), "BH")
+  expect_gt(sum(pooled[ix] <= 0.1), 0)
+  expect_equal(bh$qval_joint[ix], bh$qval_individual[ix])
+})
